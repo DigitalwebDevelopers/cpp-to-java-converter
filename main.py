@@ -1,41 +1,57 @@
-from ai_credentials import api_key # Import the API key from a separate credentials file
-from google import genai
+# Import Supporters or Libraries
+# --------------------------------------------------------
+from ai_credentials import apikey
 import re
+from google import genai
 
+
+# program for sending and getting ai model request
+# ----------------------------------------------------------
 def generate_text(prompt):
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(api_key=apikey) # using api key here
     response = client.models.generate_content(
-        model="gemini-2.0-flash",  # Specify the desired AI model
-        contents=prompt,  # Pass the prompt that asks the AI to convert code
+        model="gemini-2.0-flash",
+        contents=prompt
     )
     return response
 
-def extract_java_code_flexible(text):
+# Extraction code of java form Block of response
+# ----------------------------------------------------------
+def extract_javacode(text):
     match = re.search(
-        r"(import java.*?public static void main(.*?{.*?}.*?)\n})",  # Regex pattern
+        r"```java\s+(.*?)```",
         text,
-        re.DOTALL,  # Enables the '.' to match newline characters as well
+        re.DOTALL #enables the '.' to match new line characters as well
     )
-
-    # If a match is found, return the Java code block
     if match:
-        return match.group(1).strip() + "\n}"
-
-    # If no match is found, return None
+        return match.group(1).strip() + "\n"
+    # if no match then,
     return None
 
+# Core Process of Program held Here
+# ----------------------------------------------------------
 if __name__ == "__main__":
-    code = """"""
-    with open("main.cpp", "r") as file:
-        code = file.read()  # Read the entire content of the file
-        file.close()  # Close the file explicitly (optional with 'with' block)
+    code = ""
+    try:
+        with open("main.cpp", 'r') as file:
+            code = file.read() # read the entire cpp file
+    except FileNotFoundError:
+        print("Error: 'main.cpp' not found.")
+        exit()
 
-    prompt = "convert this cpp code into java code: " + code
-    print("converting cpp to java...")
+    prompt = "Convert this C++ code into Java code: " + code
+    print("Converting C++ to Java...")
     response = generate_text(prompt)
-    java_code = extract_java_code_flexible(response.text)
-    with open("main.java", "w") as file:
-        file.write(java_code)  # Write the extracted Java code to the file
-        file.close()  # Close the file to ensure the content is saved properly
 
-    print("cpp to java conversion done!")  # Print a success message
+    # collect the java code here
+    java_code = extract_javacode(response.text)
+
+    if java_code:
+        try:
+            with open("main.java", "w") as file:
+                file.write(java_code) # write the extracted code into java file
+            print("C++ to Java conversion done. Java code saved to 'main.java'")
+        except Exception as e:
+            print(f"Error writing to 'main.java': {e}")
+    else:
+        print("No Java code found in the AI response.")
